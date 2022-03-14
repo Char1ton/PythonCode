@@ -17,9 +17,9 @@ def ThreeDPlot(Pos):
     ax = plt.axes(projection ="3d")
     ax.scatter3D(Xp, Yp, Zp, color = "green")
     plt.title("simple 3D scatter plot")
-    #plt.xlim([0,1])
-    #plt.ylim([0,1])
-    #ax.set_zlim([-1,1]))
+    plt.xlim([0,1])
+    plt.ylim([0,1])
+    ax.set_zlim([0,1])
     
 
 def ThreeDPositionInit(N,X,Y,Z):
@@ -35,29 +35,46 @@ def ThreeDPositionInit(N,X,Y,Z):
 def ThreeDVelInit(N):
     VelInit=[]
     for n in range(0,N):
-        VelInit.append((rand.random(),rand.random(),-1*abs(rand.random())))
+        VelInit.append((rand.gauss(0,0.5),rand.gauss(0,0.5),rand.gauss(-0.5,0.5)))
     return VelInit
 
 def Motion(Pos,Vel):
-    PosM=np.zeros((10,27,3))
-    VelM=np.zeros((10,27,3))
+    PosM=np.zeros((100,8,3))
+    VelM=np.zeros((100,8,3))
     T=1
-    dt=0.1
+    dt=0.01
     PosM[0]=Pos
     VelM[0]=Vel
     for t in range(1,int(T/dt)):
         for n in range(0,int(len(Pos))):
             for i in range(0,3):
-                PosM[t][n][i]=PosM[t-1][n][i]+VelM[0][n][i]*dt
+                PosM[t][n][i]=PosM[t-1][n][i]+VelM[t-1][n][i]*dt
+                VelM[t][n][i]=VelM[t][n][i]
+                PosM[t][n][i],VelM[t][n][i]=Wall(10,dt,PosM[t][n][i],VelM[t-1][n][i])
+    ET=EnergyState(VelM)
                 
-    return PosM,VelM
+    return PosM,VelM,ET
 
-def GifMaker(frames,pos):
-        
-    p=pos
-                
-TestPos,Density=ThreeDPositionInit(27,1,1,1)
-TestVel=ThreeDVelInit(27)
-TestMotionPos,TestMotionVel=Motion(TestPos,TestVel)
-GifMaker(10,TestMotionPos)
-#print(TestMotionPos)
+def Wall(X,dt,Pos,Vel):
+    if X-Pos<=0.01 or Pos<=0.01:
+        Pos=Pos-Vel*dt
+        Vel*=-0.95
+        print('Bounce')
+    else:
+        Vel=Vel
+        Pos=Pos
+    return Pos, Vel
+
+def EnergyState(Vel):
+    E=[]
+    for t in range(0,100):
+        E.append(sum(sum(Vel[t]**2)/2))
+    return E
+
+Time=np.linspace(0,99,100)
+TestPos,Density=ThreeDPositionInit(8,1,1,1)
+TestVel=ThreeDVelInit(8)
+TestMotionPos,TestMotionVel,ET=Motion(TestPos,TestVel)
+
+plt.plot(Time,ET)
+print(ET)
